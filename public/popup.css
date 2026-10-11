@@ -1,0 +1,74 @@
+@import "tailwindcss" source(none);
+@import "@heroui/styles";
+@source "../src/popup-app.tsx";
+
+/* Layout only. Colors, sizes and component styling use HeroUI's default theme. */
+/* Chrome measures content to size the popup. A viewport cap can lock it to its
+   initial narrow viewport instead of the intended width. */
+body { margin: 0; width: 440px; min-width: 440px; }
+#app { width: 100%; max-height: 600px; overflow-y: auto; }
+.popup-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; }
+.popup-header h1 { font-size: 16px; font-weight: 600; }
+.header-actions { margin-left: auto; }
+.language-controls { display: flex; gap: 4px; }
+.brand-mark { width: 28px; height: 28px; border-radius: 6px; }
+.ui-icon { display: inline-block; flex-shrink: 0; width: 18px; height: 18px; background: currentColor; mask-size: contain; mask-position: center; mask-repeat: no-repeat; }
+.popup-body { padding: 8px 20px 20px; display: flex; flex-direction: column; gap: 24px; }
+.setup-progress { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); list-style: none; margin: 0; padding: 0; }
+.setup-progress li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; line-height: 14px; color: var(--color-muted); }
+.setup-progress li:not(:last-child)::before { content: ''; position: absolute; top: 10px; left: 50%; width: 100%; height: 2px; background: var(--color-separator); }
+.setup-progress li[data-state="complete"]::before { background: var(--color-accent); }
+.setup-progress li:not([data-state="pending"]) { color: var(--color-foreground); }
+.setup-progress-indicator { z-index: 1; display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid var(--color-separator); border-radius: 50%; background: var(--color-background); font-size: 10px; }
+.setup-progress li[data-state="current"] .setup-progress-indicator { border-color: var(--color-accent); color: var(--color-accent); }
+.setup-progress li[data-state="complete"] .setup-progress-indicator { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-accent-foreground); }
+.setup-progress-indicator svg { width: 14px; height: 14px; }
+.setup-stage, .domain-screen { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.stage-heading, .field-heading { display: flex; align-items: center; gap: 8px; }
+.choice-field { display: flex; flex-direction: column; gap: 8px; }
+.choice-option-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.connection-option { padding-inline-end: 8px; }
+.connection-option-indicators { display: flex; align-items: center; gap: 8px; flex-shrink: 0; width: 30px; }
+/* HeroUI's default indicator is absolute; keep independent markers in flow. */
+.connection-option-indicators .list-box-item__indicator { position: static; --tw-translate-y: 0px; translate: 0 0; transform: none; }
+.select__value .connection-option-indicators { display: none; }
+.stage-heading:has(.sr-only) { display: contents; }
+.stage-heading h2 { flex: 1; font-size: 16px; font-weight: 600; }
+.stage-heading h2:focus { outline: none; }
+.stage-heading h2:focus-visible { outline: 2px solid var(--color-focus); }
+.address-shortcuts { display: flex; flex-wrap: wrap; gap: 4px; margin-left: -8px; }
+.endpoint { overflow-wrap: anywhere; }
+.wizard-actions { display: flex; gap: 8px; padding-top: 8px; }
+.connection-result { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--color-success); }
+.connection-result.text-danger { color: var(--color-danger); }
+.connection-summary { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 8px; text-align: center; }
+.http-warning { margin-top: -8px; }
+.connection-manager { display: flex; flex-direction: column; gap: 16px; }
+.active-profile-card .card__content { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.active-profile-chip { align-self: flex-start; }
+.status-dot { flex-shrink: 0; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.saved-connection-picker { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.connection-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.connection-actions > .button { flex: 1 0 auto; }
+.domain-check { --button-bg-hover: transparent; --button-bg-pressed: transparent; --button-fg: var(--color-accent-soft-foreground); }
+.domain-check[data-hovered="true"] { text-decoration: underline; text-underline-offset: 3px; }
+.domain-action { height: auto; min-height: 40px; padding-block: 8px; white-space: normal; overflow-wrap: anywhere; }
+.inline-feedback { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.5; }
+.inline-feedback .ui-icon { margin-top: 1px; }
+.inline-feedback[data-status="success"] .ui-icon { color: var(--color-success); }
+.inline-feedback[data-status="warning"] .ui-icon { color: var(--color-warning); }
+.inline-feedback[data-status="danger"] .ui-icon { color: var(--color-danger); }
+.domain-status-row { display: flex; align-items: center; gap: 8px; }
+.domain-status-row .inline-feedback { flex: 1; min-width: 0; }
+.credential-summary, .active-connection { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.from-tab { align-self: flex-end; margin-top: -12px; }
+.membership-details { display: flex; flex-direction: column; gap: 8px; }
+.membership-details:empty { display: none; }
+.membership-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.membership-chips li { min-width: 0; max-width: 100%; }
+.membership-chip { max-width: 100%; height: auto; }
+.membership-chip .chip__label { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.input-group__input { min-width: 0; }
+.tooltip { max-width: 320px; }
+.information-tooltip { max-width: min(300px, calc(100vw - 32px)); white-space: normal; font-size: 12px; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0s !important; transition-duration: 0s !important; } }

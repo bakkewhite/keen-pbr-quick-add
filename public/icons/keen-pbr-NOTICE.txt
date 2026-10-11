@@ -1,0 +1,16 @@
+keen-pbr logo
+
+SVG source: https://keen-pbr.fyi/logo.svg
+PNG source: https://github.com/maksimkurb/keen-pbr/blob/main/docs/static/apple-touch-icon.png
+Retrieved: 2026-08-11
+Upstream project: https://github.com/maksimkurb/keen-pbr
+Upstream license: GNU General Public License v3.0
+License text: https://github.com/maksimkurb/keen-pbr/blob/main/LICENSE
+
+The SVG in keen-pbr.svg is an unmodified copy of the official project asset.
+
+The PNG files keen-pbr-16.png, keen-pbr-32.png, keen-pbr-48.png, and
+keen-pbr-128.png are resized derivatives of the official apple-touch-icon.png:
+https://github.com/maksimkurb/keen-pbr/blob/main/docs/static/apple-touch-icon.png
+
+Use of the keen-pbr name and logo does not imply endorsement or official status.
