@@ -24,9 +24,15 @@ const server = createServer(async (request, response) => {
   const chunks = [];
   for await (const chunk of request) chunks.push(Buffer.from(chunk));
   const text = Buffer.concat(chunks).toString('utf8');
-  const body = text ? JSON.parse(text) : null;
+  let body;
+  try { body = text ? JSON.parse(text) : null; }
+  catch { return reply(response, 400, { error: 'Invalid JSON' }); }
   const key = (request.method ?? 'GET') + ' ' + (request.url ?? '/');
   console.log(key);
+
+  if (key === 'GET /api/auth/status') {
+    return reply(response, 200, { enabled: false, authenticated: false });
+  }
 
   if (key === 'GET /api/config') {
     return reply(response, 200, {
@@ -87,6 +93,6 @@ const server = createServer(async (request, response) => {
   return reply(response, 404, { error: 'Not found' });
 });
 
-server.listen(12122, '127.0.0.1', () => {
-  console.log('Mock keen-pbr API: http://127.0.0.1:12122');
+server.listen(Number(process.env.KEEN_PBR_MOCK_PORT ?? 12122), '127.0.0.1', () => {
+  console.log('Mock keen-pbr API: http://127.0.0.1:' + server.address().port);
 });

@@ -9,6 +9,7 @@ afterEach(async () => { await Promise.all(fixtures.splice(0).map(path => rm(path
 async function fixture(manifestVersion = '4.7.2') {
   const root = await mkdtemp(join(tmpdir(), 'pbr-package-test-')); fixtures.push(root);
   await mkdir(join(root, 'scripts')); await mkdir(join(root, 'dist', 'icons'), {recursive:true});
+  await mkdir(join(root, 'dist', '_locales', 'en'), {recursive:true});
   await copyFile('scripts/package.ps1', join(root, 'scripts', 'package.ps1'));
   await writeFile(join(root, 'package.json'), JSON.stringify({version:'4.7.2-beta.1'}));
   await writeFile(join(root, 'dist', 'manifest.json'), JSON.stringify({version:manifestVersion}));
@@ -17,6 +18,7 @@ async function fixture(manifestVersion = '4.7.2') {
   await writeFile(join(root, 'dist', 'icons', 'icon.svg.map'), '{}');
   await writeFile(join(root, 'LICENSE'), 'Fixture project license');
   await writeFile(join(root, 'dist', 'icons', 'LICENSE.txt'), 'Fixture icon license');
+  await writeFile(join(root, 'dist', '_locales', 'en', 'messages.json'), '{"fixture":{"message":"Demo"}}');
   return root;
 }
 function run(root: string, version?: string) {
@@ -30,11 +32,13 @@ describe('real release packaging', () => {
     expect(await readdir(join(root, 'release'))).toEqual(['keen-pbr-quick-add-v4.7.2-beta.1.zip']);
     const zip = join(root, 'release', 'keen-pbr-quick-add-v4.7.2-beta.1.zip').replace(/'/g, "''");
     const entries = spawnSync('powershell', ['-NoProfile','-Command',
-      `Add-Type -AssemblyName System.IO.Compression.FileSystem; $z=[IO.Compression.ZipFile]::OpenRead('${zip}'); try { @($z.Entries | ForEach-Object { $_.FullName.Replace('\\','/') }) | ConvertTo-Json -Compress } finally { $z.Dispose() }`], {encoding:'utf8'});
+      `Add-Type -AssemblyName System.IO.Compression.FileSystem; $z=[IO.Compression.ZipFile]::OpenRead('${zip}'); try { @($z.Entries | ForEach-Object FullName) | ConvertTo-Json -Compress } finally { $z.Dispose() }`], {encoding:'utf8'});
     expect(entries.status, entries.stderr).toBe(0);
     const names = JSON.parse(entries.stdout) as string[];
+    expect(names.every(name => !name.includes('\\'))).toBe(true);
     expect(names).toContain('manifest.json'); expect(names).toContain('LICENSE');
     expect(names).toContain('icons/LICENSE.txt');
+    expect(names).toContain('_locales/en/messages.json');
     expect(names.some(name => name.endsWith('.map'))).toBe(false);
     expect(names.some(name => name.includes('src/') || name.includes('node_modules/'))).toBe(false);
   }, 30000);

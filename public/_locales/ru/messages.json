@@ -1,0 +1,5 @@
+{
+  "extensionName": { "message": "keen-pbr Quick Add" },
+  "shortDescription": { "message": "Добавляйте и удаляйте домены и поддомены в списках keen-pbr прямо из Chrome." },
+  "actionTitle": { "message": "Управление доменом в keen-pbr" }
+}

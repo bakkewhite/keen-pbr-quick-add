@@ -1,6 +1,6 @@
 {
   "name": "keen-pbr-quick-add-extension",
-  "version": "0.4.8-beta.1",
+  "version": "0.4.9-beta.1",
   "description": "Quickly add or remove the active site domain in keen-pbr lists.",
   "license": "GPL-3.0",
   "private": true,

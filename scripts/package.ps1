@@ -53,7 +53,20 @@ try {
   if (Test-Path -LiteralPath $archive) {
     Remove-Item -LiteralPath $archive -Force
   }
-  Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $archive
+  # ZIP paths use forward slashes, independent of the installed PowerShell ZIP module.
+  Add-Type -AssemblyName System.IO.Compression
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $zip = [IO.Compression.ZipFile]::Open($archive, [IO.Compression.ZipArchiveMode]::Create)
+  try {
+    Get-ChildItem -LiteralPath $staging -File -Recurse | ForEach-Object {
+      $entryName = $_.FullName.Substring($staging.Length + 1).Replace([char]92, [char]47)
+      [IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+        $zip, $_.FullName, $entryName, [IO.Compression.CompressionLevel]::Optimal
+      ) | Out-Null
+    }
+  } finally {
+    $zip.Dispose()
+  }
 } finally {
   if (Test-Path -LiteralPath $staging) {
     Remove-Item -LiteralPath $staging -Recurse -Force

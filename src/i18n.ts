@@ -33,6 +33,7 @@ export interface PopupCopy {
   adding: string;
   removing: string;
   checking: string;
+  checkingDomain: string;
   connectionLabel: string;
   connectedSummary: string;
   changeConnection: string;
@@ -251,6 +252,7 @@ const copies: Record<UiLanguage, PopupCopy> = {
     adding: 'Добавление…',
     removing: 'Удаление…',
     checking: 'Проверка…',
+    checkingDomain: 'Проверяем домен…',
     connectionLabel: 'Подключение к keen-pbr',
     connectedSummary: 'Подключено',
     changeConnection: 'Изменить',
@@ -360,6 +362,7 @@ const copies: Record<UiLanguage, PopupCopy> = {
     adding: 'Adding…',
     removing: 'Removing…',
     checking: 'Checking…',
+    checkingDomain: 'Checking domain…',
     connectionLabel: 'keen-pbr connection',
     connectedSummary: 'Connected',
     changeConnection: 'Change',

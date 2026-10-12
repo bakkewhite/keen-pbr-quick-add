@@ -1,0 +1,22 @@
+This is an independent API client for an existing keen-pbr installation, not a hosted VPN service. There is no developer account or subscription to sign into.
+
+Real-device testing:
+1. Use full keen-pbr 3.x with API access, not the main Keenetic admin page. Prepare a nonempty inline domain list used by an active routing rule.
+2. Open the extension, enter that keen-pbr Web UI origin, press Continue and allow access to the selected origin. Enter the keen-pbr password only if that server has native API authentication enabled.
+3. Choose a default list and finish setup.
+4. Enter a domain such as example.com, press Check, then Add to [list]. Check again: Remove from [list] should now be offered. Removing changes only that selected list.
+5. Check gemini.google.com/path: it becomes gemini.google.com, not google.com. www.example.com/path becomes example.com.
+6. In Settings, inspect saved connections. No router reboot, DNS change or VPN subscription is performed by the extension.
+
+Optional isolated API-fixture testing (no router or router password required):
+1. With Node.js 20.19+ available, obtain scripts/mock-api.mjs from the source repository and run: node scripts/mock-api.mjs
+   Source: https://github.com/bakkewhite/keen-pbr-quick-add/blob/main/scripts/mock-api.mjs
+   No npm install or extension-source build is needed for this standalone fixture.
+2. The fixture listens only on this computer at http://127.0.0.1:12122. It stores example configuration in memory, has authentication disabled and makes no external network requests. It is not part of the shipped extension.
+3. Set up the uploaded extension with that address, allow its selected host, choose local and finish setup. Allow Chrome local-network access if Chrome requires it. No password is needed.
+4. Enter example.com, Check, Add to local, then Remove from local. The fixture simulates API apply/health/routing responses; this demonstrates the extension workflow, not real packet routing.
+5. Enter www.example.com/path to check normalization. Select microsoft to inspect a different editable list. Stop the fixture with Ctrl+C; its temporary configuration disappears.
+
+Data flow: the extension reads the current tab URL only for the visible domain feature and sends requests directly to the user-selected server. No telemetry, developer relay or remote executable code. HTTP is explicitly disclosed as unencrypted; HTTPS is supported. See PRIVACY.md and User Data FAQ section 15 for the user-specified-server client case.
+
+No access to the author's or other users' private routers is supplied or required. External URL/file subscriptions are informational and are never edited by the extension.

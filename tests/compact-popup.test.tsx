@@ -15,6 +15,82 @@ afterEach(()=>cleanup());
 async function mount(f=popupFixture()) {
   render(<PopupApp model={f.model}/>);await act(()=>f.model.start());return f;
 }
+it('shows neutral placeholders instead of an Add action or Retry before the first check finishes', async () => {
+  const f = popupFixture();
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  f.override(async request => { if (request.type === 'GET_CONTEXT') await pending; });
+  render(<PopupApp model={f.model} />);
+  await waitFor(() => expect(f.send.mock.calls.some(([r]) => r.type === 'GET_CONTEXT')).toBe(true));
+  expect(screen.getByRole('status').textContent).toBe('Проверяем домен…');
+  expect(screen.getByRole('status').closest('.domain-status-row')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /^Добавить/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Проверить снова' })).toBeNull();
+  const input = screen.getByLabelText('Домен или URL') as HTMLInputElement;
+  expect(input.disabled).toBe(true);
+  expect(input.placeholder).toBe('');
+  await act(async () => { release(); await f.model.start(); });
+  expect(input.value).toBe('youtube.com');
+  expect(input.disabled).toBe(false);
+  expect(screen.getByRole('button', { name: 'Удалить из local' }).hasAttribute('disabled')).toBe(false);
+  expect(document.querySelector('main')?.getAttribute('aria-busy')).toBe('false');
+  expect(f.send.mock.calls.some(([r]) => r.type === 'MUTATE_DOMAIN')).toBe(false);
+});
+it('keeps the requested domain and list during a recheck without offering a stale action', async () => {
+  const f = await mount();
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  f.override(async request => { if (request.type === 'GET_CONTEXT') await pending; });
+  fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
+  expect(screen.getByRole('status').textContent).toBe('Проверяем домен…');
+  expect((screen.getByLabelText('Домен или URL') as HTMLInputElement).value).toBe('youtube.com');
+  expect(screen.getByRole('button', { name: 'local Список' }).hasAttribute('disabled')).toBe(true);
+  expect(screen.queryByRole('button', { name: 'Удалить из local' })).toBeNull();
+  await act(async () => { release(); });
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Удалить из local' }).hasAttribute('disabled')).toBe(false));
+  expect(f.send.mock.calls.some(([r]) => r.type === 'MUTATE_DOMAIN')).toBe(false);
+});
+it('replaces failed loading with an error and Retry, then returns to the verified action', async () => {
+  const f = popupFixture();
+  f.override(request => request.type === 'GET_CONTEXT'
+    ? { ok: false, code: 'API_UNAVAILABLE', message: 'API keen-pbr недоступен' } : undefined);
+  await mount(f);
+  expect(screen.getByRole('alert').textContent).toBe('API keen-pbr недоступен');
+  expect(screen.queryByText('Проверяем домен…')).toBeNull();
+  expect(screen.queryByRole('button', { name: /^Добавить/ })).toBeNull();
+  f.override(null);
+  fireEvent.click(screen.getByRole('button', { name: 'Проверить снова' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Удалить из local' }).hasAttribute('disabled')).toBe(false));
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Проверить снова' })).toBeNull();
+});
+it('announces domain checking in the selected language', async () => {
+  const f = popupFixture(); f.port.loadLanguage = async () => 'en';
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  f.override(async request => { if (request.type === 'GET_CONTEXT') await pending; });
+  render(<PopupApp model={f.model} />);
+  await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Checking domain…'));
+  await act(async () => { release(); await f.model.start(); });
+  expect(screen.getByRole('button', { name: 'Remove from local' }).hasAttribute('disabled')).toBe(false);
+});
+it('keeps the same loading state after saving a connection until its first domain check completes', async () => {
+  const f = await mount(popupFixture(true));
+  await act(async () => { f.model.setOrigin(LAN); await f.model.checkConnection(); });
+  act(() => f.model.setDefaultList('local'));
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  f.override(async request => { if (request.type === 'GET_CONTEXT') await pending; });
+  fireEvent.click(screen.getByRole('button', { name: 'Сохранить и продолжить' }));
+  await waitFor(() => expect(f.model.getSnapshot().screen).toBe('main'));
+  expect(screen.getByRole('status').textContent).toBe('Проверяем домен…');
+  expect(screen.queryByRole('button', { name: 'Проверить снова' })).toBeNull();
+  expect(screen.queryByRole('button', { name: /^Добавить/ })).toBeNull();
+  expect(document.querySelector('main')?.getAttribute('aria-busy')).toBe('true');
+  await act(async () => { release(); });
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Удалить из local' }).hasAttribute('disabled')).toBe(false));
+  expect(document.querySelector('main')?.getAttribute('aria-busy')).toBe('false');
+});
 it('announces the current wizard step and preserves progress when going back', async () => {
   const f = popupFixture(true); f.authNeeded.add(LAN); await mount(f);
   const progress = () => screen.getByRole('list', { name: 'Подключение к keen-pbr' });

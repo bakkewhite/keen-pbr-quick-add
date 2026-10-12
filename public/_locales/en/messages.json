@@ -1,0 +1,5 @@
+{
+  "extensionName": { "message": "keen-pbr Quick Add" },
+  "shortDescription": { "message": "Add or remove website domains and subdomains in keen-pbr lists directly from Chrome." },
+  "actionTitle": { "message": "Manage this domain in keen-pbr" }
+}

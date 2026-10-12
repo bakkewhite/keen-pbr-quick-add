@@ -7,7 +7,7 @@ describe('extension manifest', () => {
     const manifest = JSON.parse(json) as Record<string, unknown>;
 
     expect(manifest.manifest_version).toBe(3);
-    expect(manifest.version).toBe('0.4.8');
+    expect(manifest.version).toBe('0.4.9');
     expect(manifest.permissions).toEqual(['activeTab', 'storage']);
     expect(manifest).not.toHaveProperty('host_permissions');
     expect(manifest.optional_host_permissions).toEqual([
@@ -47,11 +47,24 @@ describe('extension manifest', () => {
     },
   );
 
-  it('keeps the package prerelease aligned with manifest 0.4.8', async () => {
+  it('keeps the package prerelease aligned with manifest 0.4.9', async () => {
     const packageJson = JSON.parse(
       await readFile('package.json', 'utf8'),
     ) as { version?: string };
-    expect(packageJson.version).toBe('0.4.8-beta.1');
+    expect(packageJson.version).toBe('0.4.9-beta.1');
+  });
+
+  it.each(['en', 'ru'])('resolves all store metadata in the %s locale', async locale => {
+    const manifest = JSON.parse(await readFile('public/manifest.json', 'utf8'));
+    expect(manifest.default_locale).toBe('en');
+    const messages = JSON.parse(await readFile(`public/_locales/${locale}/messages.json`, 'utf8'));
+    for (const value of [manifest.name, manifest.description, manifest.action.default_title]) {
+      const key = /^__MSG_(\w+)__$/.exec(value)?.[1];
+      expect(key).toBeTruthy();
+      expect(messages[key!]?.message.length).toBeGreaterThan(0);
+    }
+    const descriptionKey = /^__MSG_(\w+)__$/.exec(manifest.description)![1]!;
+    expect(messages[descriptionKey].message.length).toBeLessThanOrEqual(132);
   });
 
 });

@@ -1,0 +1,16 @@
+keen-pbr Quick Add lets you add or remove website domains in keen-pbr lists directly from Chrome.
+
+Open the extension on a website or enter a domain manually. Check which list contains it, choose a list, then add or remove the domain. URL paths and the www. prefix are removed; real subdomains such as gemini.google.com are preserved.
+
+• Check the current website or a manually entered domain.
+• See matches in other lists.
+• Add to or remove from the selected editable domain list.
+• Save multiple connections and a default list for each.
+• Connect locally or through a reachable HTTPS KeenDNS address.
+• English and Russian interfaces; light and dark themes.
+
+Requires full keen-pbr 3.x with its API enabled and a nonempty domain list used by an active routing rule. URL/file subscriptions and IP lists are not edited. Subscription matches may be incomplete.
+
+The extension reads the current tab's address only when you open it or choose From tab. API requests go directly to the keen-pbr server you select; there is no developer-operated relay, advertising or telemetry. Optional passwords stay in this Chrome profile, without sync. HTTP does not encrypt requests or passwords: use HTTPS or a trusted local network.
+
+Free, open source and independent; not an official keen-pbr or Keenetic product. No extension subscription or paid account is required.

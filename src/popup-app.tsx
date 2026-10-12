@@ -39,10 +39,10 @@ function InfoTooltip({ label, children }: { label: string; children: ReactNode }
     <Tooltip.Content placement="bottom" className="information-tooltip">{children}</Tooltip.Content>
   </Tooltip>;
 }
-function Choice({ label, value, options, onChange, placeholder, disabled = false, help, activeLabel }: {
+function Choice({ label, value, options, onChange, placeholder, disabled = false, loading = false, help, activeLabel }: {
   label: string; value: string; options: { id: string; label: string; active?: boolean }[];
   onChange(value: string): void; placeholder: string; disabled?: boolean;
-  help?: string; activeLabel?: string;
+  loading?: boolean; help?: string; activeLabel?: string;
 }) {
   return <div className="choice-field">
     <div className="field-heading"><span className="label">{label}</span>
@@ -50,7 +50,7 @@ function Choice({ label, value, options, onChange, placeholder, disabled = false
     </div>
     <Select fullWidth aria-label={label} value={value || null} isDisabled={disabled}
       placeholder={placeholder} onChange={key => onChange(typeof key === 'string' ? key : '')}>
-    <Select.Trigger><Select.Value /><Select.Indicator /></Select.Trigger>
+    <Select.Trigger><Select.Value>{loading ? <span className="loading-skeleton field-placeholder" aria-hidden="true" /> : undefined}</Select.Value><Select.Indicator /></Select.Trigger>
     <Select.Popover><ListBox>
       {options.map(option => <ListBox.Item key={option.id} id={option.id} textValue={option.label}
         className={activeLabel ? 'connection-option' : ''}
@@ -115,7 +115,6 @@ export function PopupApp({ model }: { model: PopupModel }) {
       </div>
     </header>
     <main className="popup-body" aria-busy={busy}>
-      {s.busy === 'load' && !s.context && !isSettings ? <p role="status" className="text-muted">{c.checking}</p> : null}
       {isSettings ? isManager ? <ConnectionManager model={model} state={s} /> : <>
         <SetupProgress steps={steps} current={step} label={c.connectionLabel} />
         <section className="setup-stage" aria-labelledby="stage-title">
@@ -253,6 +252,8 @@ function DomainScreen({ model, state: s }: { model: PopupModel; state: PopupStat
   const parsed = deriveDomainInput(s.domainInput);
   const selection = deriveDomainSelectionState(s.selectedList, s.context?.memberships ?? []);
   const busy = s.busy !== null;
+  const checking = s.busy === 'load' || s.busy === 'check' || s.busy === 'save';
+  const inputLoading = checking && !s.context && !s.domainInput;
   const verified = !!s.context?.domain && parsed.ok && parsed.domain === s.context.domain;
   const inspection = verified ? s.context?.membershipInspection : undefined;
   const otherLists = [...new Set([...selection.otherLists, ...(inspection?.matchedLists ?? [])])]
@@ -268,15 +269,17 @@ function DomainScreen({ model, state: s }: { model: PopupModel; state: PopupStat
       status: 'warning', text: c => c.absentFromSelected(s.selectedList) };
     else notice = { status: 'success', text: c => c.ready };
   }
-  return <section className="domain-screen">
-    {s.active.apiOrigin && <div className="active-connection">
-      <span className="endpoint text-xs text-muted">{s.active.apiOrigin}</span>
-      <IconAction icon="open_in_new" label={c.openWebUi}
+  return <section className="domain-screen" data-state={checking ? 'checking' : verified ? 'ready' : 'idle'}>
+    <div className="active-connection">
+      <span className="endpoint context-text text-muted">{s.active.apiOrigin
+        ?? <span className="loading-skeleton endpoint-placeholder" aria-hidden="true" />}</span>
+      <IconAction icon="open_in_new" label={c.openWebUi} disabled={!s.active.apiOrigin}
         onPress={() => window.open(s.active.apiOrigin + '/', '_blank', 'noopener,noreferrer')} />
-    </div>}
-    <TextField fullWidth value={s.domainInput} onChange={model.setDomainInput} isDisabled={s.busy === 'mutate'}>
+    </div>
+    <TextField fullWidth value={s.domainInput} onChange={model.setDomainInput} isDisabled={busy}>
       <Label>{c.domainInputLabel}</Label><InputGroup>
-        <InputGroup.Input id="domain-input" placeholder="example.com" autoComplete="off" spellCheck={false}
+        {inputLoading && <InputGroup.Prefix><span className="loading-skeleton field-placeholder" aria-hidden="true" /></InputGroup.Prefix>}
+        <InputGroup.Input id="domain-input" placeholder={inputLoading ? '' : 'example.com'} autoComplete="off" spellCheck={false}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void model.checkDomain(); } }} />
         {parsed.ok && <InputGroup.Suffix><Button className="domain-check" size="sm" variant="ghost" isDisabled={busy || !s.active.apiOrigin}
           onPress={() => void model.checkDomain()}>{c.checkDomain}</Button></InputGroup.Suffix>}
@@ -285,11 +288,16 @@ function DomainScreen({ model, state: s }: { model: PopupModel; state: PopupStat
     {s.tabDomain && (!parsed.ok || parsed.domain !== s.tabDomain) && <Button className="from-tab" size="sm"
       variant="ghost" isDisabled={busy} onPress={() => void model.checkDomain(true)}>{c.domainFromTab}</Button>}
     <Choice label={c.listLabel} value={s.selectedList} onChange={model.setSelectedList} placeholder={c.chooseList}
-      disabled={busy || !s.context} options={(s.context?.lists ?? []).map(name => ({ id: name, label: name }))} />
-    {notice && <div className="domain-status-row">
-      <Feedback notice={notice} language={s.language} compact />
-      {inspection?.status === 'partial' && <InfoTooltip label={c.membershipHelpLabel}>{c.externalPartial}</InfoTooltip>}
-    </div>}
+      disabled={busy || !s.context} loading={checking && !s.context}
+      options={(s.context?.lists ?? []).map(name => ({ id: name, label: name }))} />
+    <div className="domain-status-row">
+      {checking ? <div className="domain-loading context-text text-muted" role="status">
+        <span className="loading-indicator" aria-hidden="true" /><span>{c.checkingDomain}</span>
+      </div> : <>
+        <Feedback notice={notice} language={s.language} compact />
+        {inspection?.status === 'partial' && <InfoTooltip label={c.membershipHelpLabel}>{c.externalPartial}</InfoTooltip>}
+      </>}
+    </div>
     {verified && <div className="membership-details text-xs text-muted">
       {otherLists.length > 0 && <>
         <p>{c.otherListsLabel}</p>
@@ -301,12 +309,15 @@ function DomainScreen({ model, state: s }: { model: PopupModel; state: PopupStat
       </>}
       {inspection?.status === 'unavailable' && <p>{c.externalUnavailable}</p>}
     </div>}
-    {!s.context && s.active.apiOrigin && <Button variant="secondary" isDisabled={busy} onPress={() => void model.retry()}>{c.retryConnection}</Button>}
-    <Button className="domain-action" fullWidth variant={selection.selectedPresent ? 'danger-soft' : 'primary'} isPending={s.busy === 'mutate'}
-      isDisabled={busy || !verified || !s.context?.lists.includes(s.selectedList)} onPress={() => void model.mutate()}>
-      {s.busy === 'mutate' ? selection.selectedPresent ? c.removing : c.adding
-        : selection.selectedPresent ? c.remove(s.selectedList) : c.add(s.selectedList)}
-    </Button>
+    <div className="domain-action-slot">
+      {checking ? <div className="loading-skeleton action-placeholder" aria-hidden="true" />
+        : !s.context && s.active.apiOrigin ? <Button fullWidth variant="secondary" isDisabled={busy} onPress={() => void model.retry()}>{c.retryConnection}</Button>
+        : <Button className="domain-action" fullWidth variant={selection.selectedPresent ? 'danger-soft' : 'primary'} isPending={s.busy === 'mutate'}
+          isDisabled={busy || !verified || !s.context?.lists.includes(s.selectedList)} onPress={() => void model.mutate()}>
+          {s.busy === 'mutate' ? selection.selectedPresent ? c.removing : c.adding
+            : selection.selectedPresent ? c.remove(s.selectedList) : c.add(s.selectedList)}
+        </Button>}
+    </div>
     {!s.active.apiOrigin && !busy && <Button variant="secondary" onPress={model.openSettings}>
       {s.language === 'ru' ? 'Настроить подключение' : 'Set up connection'}
     </Button>}
